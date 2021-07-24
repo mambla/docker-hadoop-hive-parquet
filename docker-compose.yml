@@ -12,10 +12,10 @@ services:
     ports:
       - "9870:9870"
     
-  datanode:
+  datanode1:
     image: bde2020/hadoop-datanode:2.0.0-hadoop3.2.1-java8
     volumes:
-      - datanode:/hadoop/dfs/data
+      - datanode1:/hadoop/dfs/data
     env_file:
       - ./hadoop-hive.env
     environment:
@@ -23,12 +23,35 @@ services:
     ports:
       - "9864:9864"
 
+  datanode2:
+    image: bde2020/hadoop-datanode:2.0.0-hadoop3.2.1-java8
+    volumes:
+      - datanode2:/hadoop/dfs/data
+    env_file:
+      - ./hadoop-hive.env
+    environment:
+      SERVICE_PRECONDITION: "namenode:9870"
+
+  datanode3:
+    image: bde2020/hadoop-datanode:2.0.0-hadoop3.2.1-java8
+    volumes:
+      - datanode3:/hadoop/dfs/data
+    env_file:
+      - ./hadoop-hive.env
+    environment:
+      SERVICE_PRECONDITION: "namenode:9870"
+
   resourcemanager:
     image: bde2020/hadoop-resourcemanager:2.0.0-hadoop3.2.1-java8
     environment:
-      SERVICE_PRECONDITION: "namenode:9870 datanode:9864"
+      SERVICE_PRECONDITION: "namenode:9870 datanode1:9864"
     env_file:
       - ./hadoop-hive.env
+    depends_on:
+      - namenode
+      - datanode1
+      - datanode2
+      - datanode3
 
   hive-server:
     image: bde2020/hive:2.3.2-postgresql-metastore
@@ -46,9 +69,14 @@ services:
       - ./hadoop-hive.env
     command: /opt/hive/bin/hive --service metastore
     environment:
-      SERVICE_PRECONDITION: "namenode:9870 datanode:9864 hive-metastore-postgresql:5432 resourcemanager:8088"
+      SERVICE_PRECONDITION: "namenode:9870 datanode1:9864 hive-metastore-postgresql:5432 resourcemanager:8088"
     ports:
       - "9083:9083"
+    depends_on:
+      - namenode
+      - datanode1
+      - datanode2
+      - datanode3
 
   hive-metastore-postgresql:
     image: bde2020/hive-metastore-postgresql:2.3.0
@@ -64,20 +92,32 @@ services:
     env_file:
       - ./hadoop-hive.env
     environment:
-        SERVICE_PRECONDITION: "namenode:9870 datanode:9864 hive-metastore-postgresql:5432 resourcemanager:8088 hive-metastore:9083"
+        SERVICE_PRECONDITION: "namenode:9870 datanode1:9864 hive-metastore-postgresql:5432 resourcemanager:8088 hive-metastore:9083"
+    depends_on:
+      - namenode
+      - datanode1
+      - datanode2
+      - datanode3
   
   hue:
     image: gethue/hue:4.10.0
     environment:
-        SERVICE_PRECONDITION: "namenode:9870 datanode:9864 hive-metastore-postgresql:5432 resourcemanager:8088 hive-metastore:9083 huedb:5000"
+        SERVICE_PRECONDITION: "namenode:9870 datanode1:9864 hive-metastore-postgresql:5432 resourcemanager:8088 hive-metastore:9083 huedb:5000"
     ports:
       - "8888:8888"
     volumes:
       - ./hue-overrides.ini:/usr/share/hue/desktop/conf/hue-overrides.ini
     links:
       - huedb
+    depends_on:
+      - namenode
+      - datanode1
+      - datanode2
+      - datanode3
 
 volumes:
   namenode:
-  datanode:
+  datanode1:
+  datanode2:
+  datanode3:
   pg_data:
