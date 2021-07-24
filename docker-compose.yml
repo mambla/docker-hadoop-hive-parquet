@@ -2,7 +2,7 @@ version: "3"
 
 services:
   namenode:
-    image: bde2020/hadoop-namenode:2.0.0-hadoop2.7.4-java8
+    image: bde2020/hadoop-namenode:2.0.0-hadoop3.2.1-java8
     volumes:
       - namenode:/hadoop/dfs/name
     environment:
@@ -10,23 +10,23 @@ services:
     env_file:
       - ./hadoop-hive.env
     ports:
-      - "50070:50070"
+      - "9870:9870"
     
   datanode:
-    image: bde2020/hadoop-datanode:2.0.0-hadoop2.7.4-java8
+    image: bde2020/hadoop-datanode:2.0.0-hadoop3.2.1-java8
     volumes:
       - datanode:/hadoop/dfs/data
     env_file:
       - ./hadoop-hive.env
     environment:
-      SERVICE_PRECONDITION: "namenode:50070"
+      SERVICE_PRECONDITION: "namenode:9870"
     ports:
-      - "50075:50075"
+      - "9864:9864"
 
   resourcemanager:
-    image: bde2020/hadoop-resourcemanager:2.0.0-hadoop2.7.4-java8
+    image: bde2020/hadoop-resourcemanager:2.0.0-hadoop3.2.1-java8
     environment:
-      SERVICE_PRECONDITION: "namenode:50070 datanode:50075"
+      SERVICE_PRECONDITION: "namenode:9870 datanode:9864"
     env_file:
       - ./hadoop-hive.env
 
@@ -46,7 +46,7 @@ services:
       - ./hadoop-hive.env
     command: /opt/hive/bin/hive --service metastore
     environment:
-      SERVICE_PRECONDITION: "namenode:50070 datanode:50075 hive-metastore-postgresql:5432 resourcemanager:8088"
+      SERVICE_PRECONDITION: "namenode:9870 datanode:9864 hive-metastore-postgresql:5432 resourcemanager:8088"
     ports:
       - "9083:9083"
 
@@ -64,12 +64,12 @@ services:
     env_file:
       - ./hadoop-hive.env
     environment:
-        SERVICE_PRECONDITION: "namenode:50070 datanode:50075 hive-metastore-postgresql:5432 resourcemanager:8088 hive-metastore:9083"
+        SERVICE_PRECONDITION: "namenode:9870 datanode:9864 hive-metastore-postgresql:5432 resourcemanager:8088 hive-metastore:9083"
   
   hue:
     image: gethue/hue:4.6.0
     environment:
-        SERVICE_PRECONDITION: "namenode:50070 datanode:50075 hive-metastore-postgresql:5432 resourcemanager:8088 hive-metastore:9083 huedb:5000"
+        SERVICE_PRECONDITION: "namenode:9870 datanode:9864 hive-metastore-postgresql:5432 resourcemanager:8088 hive-metastore:9083 huedb:5000"
     ports:
       - "8888:8888"
     volumes:
